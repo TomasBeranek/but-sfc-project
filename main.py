@@ -2,6 +2,8 @@
 
 import argparse
 import json
+import tkinter as tk
+import os
 
 
 def init_parser():
@@ -12,8 +14,19 @@ def init_parser():
     return parser
 
 
-def check_graph_correctness(start_node_id, end_node_id, nodes, edges):
+def check_graph_correctness(graph):
+    print("TODO: check_graph_correctness()")
     return
+
+
+class ACOFrame(tk.Frame):
+    def __init__(self, parent, graph):
+        tk.Frame.__init__(self, parent)
+
+        # create canvas into which a graph will be displayed
+        self.canvas = tk.Canvas(self, bg='white', highlightthickness=0)
+        self.canvas.pack(fill='both', expand=True)
+
 
 if __name__ == '__main__':
     parser = init_parser()
@@ -23,14 +36,18 @@ if __name__ == '__main__':
     with open(args.graph_file, 'r') as f:
         graph = json.load(f)
 
-    # load individual graph components from JSON
-    start_node_id = graph['start_node_id']
-    end_node_id = graph['end_node_id']
-    edges = graph['edges']
-    nodes = graph['nodes']
-
     # check graph semantically
-    check_graph_correctness(start_node_id, end_node_id, nodes, edges)
+    check_graph_correctness(graph)
 
+    root = tk.Tk()
 
-    print(graph)
+    # set window size
+    root.geometry('1300x700')
+    root.resizable(True, True)
+
+    # set title
+    root.title('ACO simulation')
+
+    # start window loop
+    ACOFrame(root, graph).pack(fill="both", expand=True)
+    root.mainloop()
