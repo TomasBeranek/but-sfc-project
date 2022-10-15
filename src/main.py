@@ -4,6 +4,19 @@ import argparse
 import json
 import tkinter as tk
 import os
+import sys
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 
 def init_parser():
@@ -15,8 +28,51 @@ def init_parser():
 
 
 def check_graph_correctness(graph):
-    print("TODO: check_graph_correctness()")
+    if graph["start_node_id"] not in graph["nodes"].keys():
+        print(f'{bcolors.FAIL}ERROR{bcolors.ENDC}: Start node has invalid ID!', file=sys.stderr)
+        sys.exit(1)
+
+    if graph["end_node_id"] not in graph["nodes"].keys():
+        print(f'{bcolors.FAIL}ERROR{bcolors.ENDC}: End node has invalid ID!', file=sys.stderr)
+        sys.exit(1)
+
+    for edge_id in graph["edges"]:
+        node1 = int(edge_id.split(' ')[0])
+        node2 = int(edge_id.split(' ')[1])
+
+        if node1 == node2:
+            print(f'{bcolors.FAIL}ERROR{bcolors.ENDC}: Edges cannot start and end in the same node!', file=sys.stderr)
+            sys.exit(1)
+
+        if node1 not in graph["nodes"].keys():
+            print(f'{bcolors.FAIL}ERROR{bcolors.ENDC}: Edge is connected to a non-existing node (ID: {node1})!', file=sys.stderr)
+            sys.exit(1)
+
+        if node2 not in graph["nodes"].keys():
+            print(f'{bcolors.FAIL}ERROR{bcolors.ENDC}: Edge is connected to a non-existing node (ID: {node2})!', file=sys.stderr)
+            sys.exit(1)
+
     return
+
+
+def restructure_graph(graph):
+    nodes = {}
+    edges = {}
+
+    for node in graph["nodes"]:
+        nodes[node["id"]] = node
+
+    for edge in graph["edges"]:
+        from_node = edge["from_node_id"]
+        to_node = edge["to_node_id"]
+        edges[f"{from_node} {to_node}"] = edge
+        edges[f"{to_node} {from_node}"] = edge
+
+    # update old graph
+    graph["nodes"] = nodes
+    graph["edges"] = edges
+
+    return graph
 
 
 class ACOFrame(tk.Frame):
@@ -35,6 +91,9 @@ if __name__ == '__main__':
     # load graph in JSON format
     with open(args.graph_file, 'r') as f:
         graph = json.load(f)
+
+    # restructure graph into faster structure
+    graph = restructure_graph(graph)
 
     # check graph semantically
     check_graph_correctness(graph)
