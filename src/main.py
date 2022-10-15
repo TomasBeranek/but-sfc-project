@@ -75,6 +75,10 @@ def restructure_graph(graph):
     return graph
 
 
+def create_circle(x, y, r, canvas):
+    return canvas.create_oval(x - r, y - r, x + r, y + r, fill='#3e3e3e', outline='#2c2c2c', width=5)
+
+
 class ACOFrame(tk.Frame):
     def __init__(self, parent, graph):
         tk.Frame.__init__(self, parent)
@@ -82,6 +86,25 @@ class ACOFrame(tk.Frame):
         # create canvas into which a graph will be displayed
         self.canvas = tk.Canvas(self, bg='white', highlightthickness=0)
         self.canvas.pack(fill='both', expand=True)
+
+        self.draw_edges(graph)
+        self.draw_nodes(graph["nodes"])
+
+    def draw_nodes(self, nodes):
+        for node in nodes.values():
+            create_circle(node['x'], node['y'], 25, self.canvas)
+
+    def draw_edges(self, graph):
+        for edge_id in graph['edges'].values():
+            start = edge_id["from_node_id"]
+            end = edge_id["to_node_id"]
+
+            x1 = graph['nodes'][start]['x']
+            y1 = graph['nodes'][start]['y']
+            x2 = graph['nodes'][end]['x']
+            y2 = graph['nodes'][end]['y']
+
+            self.canvas.create_line(x1, y1, x2, y2, fill='#2c2c2c', width=7)
 
 
 if __name__ == '__main__':
