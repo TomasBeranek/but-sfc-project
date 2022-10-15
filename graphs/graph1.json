@@ -17,6 +17,11 @@
       "id": 2,
       "x": 300,
       "y": 300
+    },
+    {
+      "id": 3,
+      "x": 300,
+      "y": 100
     }
   ],
   "edges":
@@ -27,6 +32,14 @@
     },
     {
       "from_node_id": 1,
+      "to_node_id": 2
+    },
+    {
+      "from_node_id": 0,
+      "to_node_id": 3
+    },
+    {
+      "from_node_id": 3,
       "to_node_id": 2
     }
   ]
