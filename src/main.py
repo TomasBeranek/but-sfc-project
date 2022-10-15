@@ -48,6 +48,11 @@ if __name__ == '__main__':
     # set title
     root.title('ACO simulation')
 
+    # set icon
+    img_path = os.path.dirname(os.path.realpath(__file__)) + '/../gui_images/ant_icon.png'
+    img = tk.Image("photo", file=img_path)
+    root.tk.call('wm', 'iconphoto', root._w,img)
+
     # start window loop
     ACOFrame(root, graph).pack(fill="both", expand=True)
     root.mainloop()
