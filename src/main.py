@@ -1,11 +1,11 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.9
 
 import argparse
 import json
 import tkinter as tk
 import os
 import sys
-
+import Pmw
 
 class bcolors:
     HEADER = '\033[95m'
@@ -76,7 +76,7 @@ def restructure_graph(graph):
 
 
 def create_circle(x, y, r, canvas):
-    return canvas.create_oval(x - r, y - r, x + r, y + r, fill='#3e3e3e', outline='#2c2c2c', width=5)
+    return canvas.create_oval(x - r, y - r, x + r, y + r, fill='#3e3e3e', outline='#2c2c2c', width=5, activefill="#4e4e4e")
 
 
 class ACOFrame(tk.Frame):
@@ -87,12 +87,17 @@ class ACOFrame(tk.Frame):
         self.canvas = tk.Canvas(self, bg='white', highlightthickness=0)
         self.canvas.pack(fill='both', expand=True)
 
+        # for tooltips
+        self.balloon = Pmw.Balloon()
+
         self.draw_edges(graph)
         self.draw_nodes(graph["nodes"])
 
+
     def draw_nodes(self, nodes):
-        for node in nodes.values():
-            create_circle(node['x'], node['y'], 25, self.canvas)
+        for id, node in nodes.items():
+            circle = create_circle(node['x'], node['y'], 25, self.canvas)
+            self.balloon.tagbind(self.canvas, circle, f'ID: {id}')
 
     def draw_edges(self, graph):
         for edge_id in graph['edges'].values():
@@ -104,7 +109,8 @@ class ACOFrame(tk.Frame):
             x2 = graph['nodes'][end]['x']
             y2 = graph['nodes'][end]['y']
 
-            self.canvas.create_line(x1, y1, x2, y2, fill='#2c2c2c', width=7)
+            line = self.canvas.create_line(x1, y1, x2, y2, fill='#2c2c2c', width=7, activefill="#4e4e4e")
+            self.balloon.tagbind(self.canvas, line, f'Pheromone level: {...}')
 
 
 if __name__ == '__main__':
@@ -122,6 +128,7 @@ if __name__ == '__main__':
     check_graph_correctness(graph)
 
     root = tk.Tk()
+    Pmw.initialise(root)
 
     # set window size
     root.geometry('1300x700')
