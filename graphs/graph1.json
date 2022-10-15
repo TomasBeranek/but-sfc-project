@@ -1,0 +1,33 @@
+{
+  "start_node_id": 0,
+  "end_node_id": 2,
+  "nodes":
+  [
+    {
+      "id": 0,
+      "x": 100,
+      "y": 100
+    },
+    {
+      "id": 1,
+      "x": 200,
+      "y": 200
+    },
+    {
+      "id": 2,
+      "x": 300,
+      "y": 300
+    }
+  ],
+  "edges":
+  [
+    {
+      "from_node_id": 0,
+      "to_node_id": 1
+    },
+    {
+      "from_node_id": 1,
+      "to_node_id": 2
+    }
+  ]
+}
