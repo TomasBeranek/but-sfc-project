@@ -6,6 +6,17 @@ import tkinter as tk
 import os
 import sys
 import Pmw
+from dataclasses import dataclass
+
+# ant update their position every TIMER ms
+TIMER = 100
+
+# root of the app
+ROOT = None
+
+# main frame
+FRAME = None
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -23,6 +34,7 @@ def init_parser():
     parser = argparse.ArgumentParser(description='The application simulate and visualize a shortest path search in given graph using ACO (Ant Colony Optimization) algorithm.')
 
     parser.add_argument('-g', '--graph-file', required=True, type=str, help='input JSON file with a graph definition')
+    parser.add_argument('-a', '--ants', required=True, type=int, help='number of ants')
 
     return parser
 
@@ -79,8 +91,30 @@ def create_circle(x, y, r, canvas):
     return canvas.create_oval(x - r, y - r, x + r, y + r, fill='#3e3e3e', outline='#2c2c2c', width=5, activefill="#4e4e4e")
 
 
+def ant_timer_event():
+    global TIMER, ROOT, FRAME
+    canvas = FRAME.canvas
+    ants = FRAME.ants
+
+    for id in canvas.find_withtag("ant"):
+        x, y = canvas.coords(id)
+        canvas.coords(id, (x + 1, y + 1))
+
+    ROOT.after(TIMER, ant_timer_event)
+
+
+
+@dataclass
+class Ant:
+    id: int
+    x: int
+    y: int
+    angle: int = 0
+    next_node: int = None
+
+
 class ACOFrame(tk.Frame):
-    def __init__(self, parent, graph):
+    def __init__(self, parent, graph, ants):
         tk.Frame.__init__(self, parent)
 
         # create canvas into which a graph will be displayed
@@ -90,8 +124,22 @@ class ACOFrame(tk.Frame):
         # for tooltips
         self.balloon = Pmw.Balloon()
 
+        # display graph
         self.draw_edges(graph)
         self.draw_nodes(graph["nodes"])
+
+        # prepare to save ants
+        self.ants = {}
+
+        # display ants
+        ant_img_path = os.path.dirname(os.path.realpath(__file__)) + '/../gui_images/ant_image_low_res.png'
+        self.ant_img = tk.PhotoImage(file=ant_img_path)
+        start_node_x = graph['nodes'][graph['start_node_id']]['x']
+        start_node_y = graph['nodes'][graph['start_node_id']]['y']
+
+        for i in range(ants):
+            id = self.canvas.create_image(start_node_x, start_node_y, image=self.ant_img, tags='ant')
+            self.ants[id] = Ant(start_node_x, start_node_y, id)
 
 
     def draw_nodes(self, nodes):
@@ -128,6 +176,7 @@ if __name__ == '__main__':
     check_graph_correctness(graph)
 
     root = tk.Tk()
+    ROOT = root
     Pmw.initialise(root)
 
     # set window size
@@ -143,5 +192,7 @@ if __name__ == '__main__':
     root.tk.call('wm', 'iconphoto', root._w,img)
 
     # start window loop
-    ACOFrame(root, graph).pack(fill="both", expand=True)
+    FRAME = ACOFrame(root, graph, args.ants)
+    FRAME.pack(fill="both", expand=True)
+    root.after(TIMER, ant_timer_event)
     root.mainloop()
