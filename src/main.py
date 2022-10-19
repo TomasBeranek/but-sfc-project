@@ -176,10 +176,6 @@ class ACOFrame(tk.Frame):
         # for tooltips
         self.balloon = Pmw.Balloon()
 
-        # display graph
-        self.draw_edges(graph)
-        self.draw_nodes(graph["nodes"])
-
         # prepare to save ants
         self.ants = {}
 
@@ -198,6 +194,9 @@ class ACOFrame(tk.Frame):
             ant.ant_img = ant_img_tk
             self.ants[id] = ant
 
+        # display graph over ants
+        self.draw_edges(graph)
+        self.draw_nodes(graph["nodes"])
 
 
     def draw_nodes(self, nodes):
