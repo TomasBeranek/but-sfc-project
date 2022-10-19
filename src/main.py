@@ -8,7 +8,9 @@ import sys
 import Pmw
 import random
 import math
+import numpy as np
 from dataclasses import dataclass
+from PIL import Image, ImageTk
 
 # ant update their position every TIMER ms
 TIMER = 25
@@ -114,9 +116,27 @@ def ant_timer_event():
         if x == ant.next_node['x'] and y == ant.next_node['y']:
             # calculate the new next node
             next_node_id = random.choice(list(ant.next_node['adjacent_nodes']))
-            ant.next_node = ant.graph['nodes'][next_node_id]
-            x_move_ammount = ant.next_node['x'] - x
-            y_move_ammount = ant.next_node['y'] - y
+            new_next_node = ant.graph['nodes'][next_node_id]
+
+            # calculate rotation of ant image
+            path_vector_x = new_next_node['x'] - ant.next_node['x']
+            # flip Y axis, since positive y is at the bottom in windows
+            path_vector_y = -1 *(new_next_node['y'] - ant.next_node['y'])
+
+            # calculate angle in degrees of edge from next_node to new_next_node
+            path_vector = complex(path_vector_x, path_vector_y)
+            angle = np.angle(path_vector, deg=True)
+
+            # correction -- in numpy 0.0 angle points up, we want 0.0 point right
+            angle = angle - 90
+
+            # update next node
+            ant.next_node = new_next_node
+
+            # rotate ant towards next node
+            ant_img_tk = FRAME.ant_img.rotate(angle)
+            ant.ant_img = ImageTk.PhotoImage(ant_img_tk)
+            canvas.itemconfig(ant_id,image=ant.ant_img)
         else:
             # get remaining distance to next node
             x_distance = ant.next_node['x'] - x
@@ -165,13 +185,19 @@ class ACOFrame(tk.Frame):
 
         # display ants
         ant_img_path = os.path.dirname(os.path.realpath(__file__)) + '/../gui_images/ant_image_low_res.png'
-        self.ant_img = tk.PhotoImage(file=ant_img_path)
+
+        self.ant_img = Image.open(ant_img_path)
+        ant_img_tk = ImageTk.PhotoImage(self.ant_img)
+
         start_node_x = graph['nodes'][graph['start_node_id']]['x']
         start_node_y = graph['nodes'][graph['start_node_id']]['y']
 
         for i in range(ants):
-            id = self.canvas.create_image(start_node_x, start_node_y, image=self.ant_img, tags='ant')
-            self.ants[id] = Ant(id, graph)
+            id = self.canvas.create_image(start_node_x, start_node_y, image=ant_img_tk, tags='ant')
+            ant = Ant(id, graph)
+            ant.ant_img = ant_img_tk
+            self.ants[id] = ant
+
 
 
     def draw_nodes(self, nodes):
