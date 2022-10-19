@@ -6,10 +6,15 @@ import tkinter as tk
 import os
 import sys
 import Pmw
+import random
+import math
 from dataclasses import dataclass
 
 # ant update their position every TIMER ms
-TIMER = 100
+TIMER = 25
+
+# speed of an ant
+ANT_SPEED = 10
 
 # root of the app
 ROOT = None
@@ -97,25 +102,47 @@ def create_circle(x, y, r, canvas):
 
 
 def ant_timer_event():
-    global TIMER, ROOT, FRAME
+    global TIMER, ANT_SPEED, ROOT, FRAME
     canvas = FRAME.canvas
     ants = FRAME.ants
 
-    for id in canvas.find_withtag("ant"):
-        x, y = canvas.coords(id)
-        canvas.coords(id, (x + 1, y + 1))
+    for ant_id in canvas.find_withtag("ant"):
+        x, y = canvas.coords(ant_id)
+        ant = ants[ant_id]
+
+        # if ant arrived to the next node
+        if x == ant.next_node['x'] and y == ant.next_node['y']:
+            # calculate the new next node
+            next_node_id = random.choice(list(ant.next_node['adjacent_nodes']))
+            ant.next_node = ant.graph['nodes'][next_node_id]
+            x_move_ammount = ant.next_node['x'] - x
+            y_move_ammount = ant.next_node['y'] - y
+        else:
+            # get remaining distance to next node
+            x_distance = ant.next_node['x'] - x
+            y_distance = ant.next_node['y'] - y
+
+            # distance
+            distance = math.sqrt(x_distance**2 + y_distance**2)
+
+            # number of moves the ant need to take to arrive to the next node
+            steps = math.ceil(distance / ANT_SPEED)
+
+            # make one step
+            x_move_ammount = math.ceil(x_distance / steps)
+            y_move_ammount = math.ceil(y_distance / steps)
+            canvas.move(ant_id, x_move_ammount, y_move_ammount)
 
     ROOT.after(TIMER, ant_timer_event)
 
 
-
-@dataclass
 class Ant:
-    id: int
-    x: int
-    y: int
-    angle: int = 0
-    next_node: int = None
+    def __init__(self, id, graph):
+        self.id = id
+        self.graph = graph
+        start_node_id = graph['start_node_id']
+        self.next_node = graph['nodes'][start_node_id]
+        self.running = False
 
 
 class ACOFrame(tk.Frame):
@@ -144,7 +171,7 @@ class ACOFrame(tk.Frame):
 
         for i in range(ants):
             id = self.canvas.create_image(start_node_x, start_node_y, image=self.ant_img, tags='ant')
-            self.ants[id] = Ant(start_node_x, start_node_y, id)
+            self.ants[id] = Ant(id, graph)
 
 
     def draw_nodes(self, nodes):
