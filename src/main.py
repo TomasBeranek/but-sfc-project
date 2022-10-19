@@ -72,13 +72,18 @@ def restructure_graph(graph):
     edges = {}
 
     for node in graph["nodes"]:
+        node["adjacent_nodes"] = set()
         nodes[node["id"]] = node
 
     for edge in graph["edges"]:
-        from_node = edge["from_node_id"]
-        to_node = edge["to_node_id"]
-        edges[f"{from_node} {to_node}"] = edge
-        edges[f"{to_node} {from_node}"] = edge
+        from_node_id = edge["from_node_id"]
+        to_node_id = edge["to_node_id"]
+        edges[f"{from_node_id} {to_node_id}"] = edge
+        edges[f"{to_node_id} {from_node_id}"] = edge
+
+        # add information about adjacency
+        nodes[from_node_id]["adjacent_nodes"].add(to_node_id)
+        nodes[to_node_id]["adjacent_nodes"].add(from_node_id)
 
     # update old graph
     graph["nodes"] = nodes
