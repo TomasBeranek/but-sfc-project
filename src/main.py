@@ -83,6 +83,8 @@ def check_graph_correctness(graph):
 
 
 def restructure_graph(graph):
+    global DEFAULT_PHEROMONE_LEVEL
+
     nodes = {}
     edges = {}
 
@@ -99,6 +101,12 @@ def restructure_graph(graph):
         # add information about adjacency
         nodes[from_node_id]["adjacent_nodes"].add(to_node_id)
         nodes[to_node_id]["adjacent_nodes"].add(from_node_id)
+
+        # set length (weight) and pheromone level
+        x = nodes[from_node_id]['x'] - nodes[to_node_id]['x']
+        y = nodes[from_node_id]['y'] - nodes[to_node_id]['y']
+        edge['length'] = math.sqrt(x**2 + y**2)
+        edge['pheromone_level'] = DEFAULT_PHEROMONE_LEVEL
 
     # update old graph
     graph["nodes"] = nodes
