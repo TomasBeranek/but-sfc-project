@@ -298,17 +298,18 @@ class ACOFrame(tk.Frame):
             self.balloon.tagbind(self.canvas, circle, f'ID: {id}')
 
     def draw_edges(self, graph):
-        for edge_id in graph['edges'].values():
-            start = edge_id["from_node_id"]
-            end = edge_id["to_node_id"]
+        for edge in graph['edges'].values():
+            start = edge["from_node_id"]
+            end = edge["to_node_id"]
 
             x1 = graph['nodes'][start]['x']
             y1 = graph['nodes'][start]['y']
             x2 = graph['nodes'][end]['x']
             y2 = graph['nodes'][end]['y']
 
-            line = self.canvas.create_line(x1, y1, x2, y2, fill='#2c2c2c', width=7, activefill="#4e4e4e")
-            self.balloon.tagbind(self.canvas, line, f'Pheromone level: {...}')
+            line = self.canvas.create_line(x1, y1, x2, y2, fill='#2c2c2c', width=7)
+            edge['line_object_id'] = line
+            # self.balloon.tagbind(self.canvas, line, f'Pheromone level: {...}')
 
 
 if __name__ == '__main__':
