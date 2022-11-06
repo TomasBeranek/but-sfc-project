@@ -119,8 +119,56 @@ def create_circle(x, y, r, canvas):
     return canvas.create_oval(x - r, y - r, x + r, y + r, fill='#3e3e3e', outline='#2c2c2c', width=5, activefill="#4e4e4e")
 
 
+def evaporate_pheromone_trails(graph):
+    global ITERATION_CNT, TIMER
+    # evaporate hormones every second by given amount
+    if ITERATION_CNT % (1000 // TIMER) == 0:
+        for edge in graph['edges'].values():
+            edge['pheromone_level'] *= EVAPORATION_PER_SECOND
+            edge['pheromone_level'] = max(edge['pheromone_level'], MIN_PHEROMONE_LEVEL)
+
+    ITERATION_CNT += 1
+
+
+def get_next_node(curr_node, edges, last_node_id):
+    global ALPHA, BETA
+    adjacent_node_ids = curr_node['adjacent_nodes']
+    curr_node_id = curr_node['id']
+
+    coefs = {}
+    coef_sum = 0
+
+    for node_id in adjacent_node_ids:
+        if last_node_id != node_id:
+            edge_id = f'{node_id} {curr_node_id}'
+            edge_coef = edges[edge_id]['pheromone_level']**ALPHA * (1 / edges[edge_id]['length'])**BETA # Qij
+            coefs[node_id] = edge_coef
+            coef_sum += edge_coef
+
+    threshold = random.uniform(0, 1)
+
+    curr_threshold = 0
+
+    for node_id, edge_coef in coefs.items():
+        curr_threshold += edge_coef / coef_sum
+
+        if threshold <= curr_threshold:
+            return node_id
+
+
+def update_path_color(canvas, line_id, pheromone_level):
+    hex_color = canvas.itemcget(line_id, 'fill')
+    hex_red = hex_color[1:3]
+    red = int(hex_red, 16)
+    DEFAULT_RED = 44
+    new_red = min(255, DEFAULT_RED + pheromone_level)
+    hex_new_red = "%0.2X" % int(new_red)
+    # set new color
+    canvas.itemconfigure(line_id, fill='#' + hex_new_red + '2c2c')
+
+
 def ant_timer_event():
-    global TIMER, ANT_SPEED, ROOT, FRAME
+    global TIMER, ANT_SPEED, ROOT, FRAME, ITERATION_CNT, EVAPORATION_PER_SECOND, MIN_PHEROMONE_LEVEL
     canvas = FRAME.canvas
     ants = FRAME.ants
 
@@ -130,9 +178,19 @@ def ant_timer_event():
 
         # if ant arrived to the next node
         if x == ant.next_node['x'] and y == ant.next_node['y']:
+            # add pheromones to the last edge
+            if ant.last_edge_id:
+                if ant.has_food:
+                    ant.graph['edges'][ant.last_edge_id]['pheromone_level'] += 100
+
+                # update color of given path based on pheromone level
+                line_id = ant.graph['edges'][ant.last_edge_id]['line_object_id']
+                pheromone_level = ant.graph['edges'][ant.last_edge_id]['pheromone_level']
+                update_path_color(canvas, line_id, pheromone_level)
+
             # calculate the new next node
-            next_node_id = random.choice(list(ant.next_node['adjacent_nodes']))
-            new_next_node = ant.graph['nodes'][next_node_id]
+            new_next_node_id = get_next_node(ant.next_node, ant.graph['edges'], ant.last_node_id)
+            new_next_node = ant.graph['nodes'][new_next_node_id]
 
             # calculate rotation of ant image
             path_vector_x = new_next_node['x'] - ant.next_node['x']
@@ -146,13 +204,24 @@ def ant_timer_event():
             # correction -- in numpy 0.0 angle points up, we want 0.0 point right
             angle = angle - 90
 
+            # save current path/edge
+            next_node_id = ant.next_node['id']
+            ant.last_edge_id = f"{next_node_id} {new_next_node_id}"
+
             # update next node
+            ant.last_node_id = ant.next_node['id']
             ant.next_node = new_next_node
 
             # rotate ant towards next node
             ant_img_tk = FRAME.ant_img.rotate(angle)
             ant.ant_img = ImageTk.PhotoImage(ant_img_tk)
             canvas.itemconfig(ant_id,image=ant.ant_img)
+
+            if ant.last_node_id == ant.graph['end_node_id']:
+                ant.has_food = True
+
+            if ant.last_node_id == ant.graph['start_node_id']:
+                ant.has_food = False
         else:
             # get remaining distance to next node
             x_distance = ant.next_node['x'] - x
@@ -169,6 +238,9 @@ def ant_timer_event():
             y_move_ammount = math.ceil(y_distance / steps)
             canvas.move(ant_id, x_move_ammount, y_move_ammount)
 
+    # evaporate some portion of pheromone on all paths
+    evaporate_pheromone_trails(FRAME.graph)
+
     ROOT.after(TIMER, ant_timer_event)
 
 
@@ -179,6 +251,9 @@ class Ant:
         start_node_id = graph['start_node_id']
         self.next_node = graph['nodes'][start_node_id]
         self.running = False
+        self.last_edge_id = None
+        self.has_food = False
+        self.last_node_id = None
 
 
 class ACOFrame(tk.Frame):
@@ -213,6 +288,8 @@ class ACOFrame(tk.Frame):
         # display graph over ants
         self.draw_edges(graph)
         self.draw_nodes(graph["nodes"])
+
+        self.graph = graph
 
 
     def draw_nodes(self, nodes):
