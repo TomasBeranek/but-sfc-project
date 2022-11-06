@@ -213,7 +213,12 @@ def ant_timer_event():
             ant.next_node = new_next_node
 
             # rotate ant towards next node
-            ant_img_tk = FRAME.ant_img.rotate(angle)
+            print(ant.has_food)
+            if ant.has_food:
+                ant_img_tk = FRAME.ant_food_img.rotate(angle)
+            else:
+                ant_img_tk = FRAME.ant_img.rotate(angle)
+
             ant.ant_img = ImageTk.PhotoImage(ant_img_tk)
             canvas.itemconfig(ant_id,image=ant.ant_img)
 
@@ -270,9 +275,12 @@ class ACOFrame(tk.Frame):
         # prepare to save ants
         self.ants = {}
 
+        # save ant with food image for later use
+        ant_food_img_path = os.path.dirname(os.path.realpath(__file__)) + '/../gui_images/ant_image_low_res_with_food.png'
+        self.ant_food_img = Image.open(ant_food_img_path)
+
         # display ants
         ant_img_path = os.path.dirname(os.path.realpath(__file__)) + '/../gui_images/ant_image_low_res.png'
-
         self.ant_img = Image.open(ant_img_path)
         ant_img_tk = ImageTk.PhotoImage(self.ant_img)
 
