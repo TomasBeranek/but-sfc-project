@@ -9,7 +9,6 @@ import Pmw
 import random
 import math
 import numpy as np
-from dataclasses import dataclass
 from PIL import Image, ImageTk
 
 # ant update their position every TIMER ms
