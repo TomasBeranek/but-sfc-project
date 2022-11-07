@@ -119,14 +119,16 @@ def create_circle(x, y, r, canvas):
     return canvas.create_oval(x - r, y - r, x + r, y + r, fill='#3e3e3e', outline='#2c2c2c', width=5, activefill="#4e4e4e")
 
 
-def evaporate_pheromone_trails(graph):
+def evaporate_pheromone_trails(canvas, graph):
     global ITERATION_CNT, TIMER
     # evaporate hormones every second by given amount
     if ITERATION_CNT % (1000 // TIMER) == 0:
         for edge in graph['edges'].values():
-            edge['pheromone_level'] *= EVAPORATION_PER_SECOND
+            edge['pheromone_level'] *= EVAPORATION_PER_SECOND.get()/100
             edge['pheromone_level'] = max(edge['pheromone_level'], MIN_PHEROMONE_LEVEL)
 
+            # update color of given path based on pheromone level
+            update_path_color(canvas, edge['line_object_id'], edge['pheromone_level'])
     ITERATION_CNT += 1
 
 
@@ -270,7 +272,7 @@ def ant_timer_event():
             canvas.move(ant_id, x_move_ammount, y_move_ammount)
 
     # evaporate some portion of pheromone on all paths
-    evaporate_pheromone_trails(FRAME.graph)
+    evaporate_pheromone_trails(canvas, FRAME.graph)
 
     ROOT.after(TIMER, ant_timer_event)
 
