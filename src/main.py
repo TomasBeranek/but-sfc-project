@@ -167,6 +167,70 @@ def update_path_color(canvas, line_id, pheromone_level):
     canvas.itemconfigure(line_id, fill='#' + hex_new_red + '2c2c')
 
 
+def add_pheromones_to_edge(canvas, ant):
+    if ant.last_edge_id:
+        if ant.has_food:
+            ant.graph['edges'][ant.last_edge_id]['pheromone_level'] += 100
+
+        # update color of given path based on pheromone level
+        line_id = ant.graph['edges'][ant.last_edge_id]['line_object_id']
+        pheromone_level = ant.graph['edges'][ant.last_edge_id]['pheromone_level']
+        update_path_color(canvas, line_id, pheromone_level)
+
+
+def calculate_image_angle(new_next_node, ant):
+    path_vector_x = new_next_node['x'] - ant.next_node['x']
+    # flip Y axis, since positive y is at the bottom in windows
+    path_vector_y = -1 *(new_next_node['y'] - ant.next_node['y'])
+
+    # calculate angle in degrees of edge from next_node to new_next_node
+    path_vector = complex(path_vector_x, path_vector_y)
+    angle = np.angle(path_vector, deg=True)
+
+    # correction -- in numpy 0.0 angle points up, we want 0.0 point right
+    return angle - 90
+
+
+def update_ant_image(canvas, ant, angle, ant_id):
+    global FRAME
+
+    if ant.has_food:
+        ant_img_tk = FRAME.ant_food_img.rotate(angle)
+    else:
+        ant_img_tk = FRAME.ant_img.rotate(angle)
+
+    ant.ant_img = ImageTk.PhotoImage(ant_img_tk)
+    canvas.itemconfig(ant_id, image=ant.ant_img)
+
+
+def get_move_ammount(ant, x, y):
+    global ANT_SPEED
+
+    # get remaining distance to next node
+    x_distance = ant.next_node['x'] - x
+    y_distance = ant.next_node['y'] - y
+
+    # distance
+    distance = math.sqrt(x_distance**2 + y_distance**2)
+
+    # number of moves the ant need to take to arrive to the next node
+    steps = math.ceil(distance / ANT_SPEED)
+
+    # make one step
+    x_move_ammount = math.ceil(x_distance / steps)
+    y_move_ammount = math.ceil(y_distance / steps)
+
+    return x_move_ammount, y_move_ammount
+
+
+def set_food_information(ant):
+    if ant.last_node_id == ant.graph['end_node_id']:
+        ant.has_food = True
+
+    if ant.last_node_id == ant.graph['start_node_id']:
+        ant.has_food = False
+
+
 def ant_timer_event():
     global TIMER, ANT_SPEED, ROOT, FRAME, ITERATION_CNT, EVAPORATION_PER_SECOND, MIN_PHEROMONE_LEVEL
     canvas = FRAME.canvas
@@ -179,68 +243,30 @@ def ant_timer_event():
         # if ant arrived to the next node
         if x == ant.next_node['x'] and y == ant.next_node['y']:
             # add pheromones to the last edge
-            if ant.last_edge_id:
-                if ant.has_food:
-                    ant.graph['edges'][ant.last_edge_id]['pheromone_level'] += 100
-
-                # update color of given path based on pheromone level
-                line_id = ant.graph['edges'][ant.last_edge_id]['line_object_id']
-                pheromone_level = ant.graph['edges'][ant.last_edge_id]['pheromone_level']
-                update_path_color(canvas, line_id, pheromone_level)
+            add_pheromones_to_edge(canvas, ant)
 
             # calculate the new next node
             new_next_node_id = get_next_node(ant.next_node, ant.graph['edges'], ant.last_node_id)
             new_next_node = ant.graph['nodes'][new_next_node_id]
 
-            # calculate rotation of ant image
-            path_vector_x = new_next_node['x'] - ant.next_node['x']
-            # flip Y axis, since positive y is at the bottom in windows
-            path_vector_y = -1 *(new_next_node['y'] - ant.next_node['y'])
-
-            # calculate angle in degrees of edge from next_node to new_next_node
-            path_vector = complex(path_vector_x, path_vector_y)
-            angle = np.angle(path_vector, deg=True)
-
-            # correction -- in numpy 0.0 angle points up, we want 0.0 point right
-            angle = angle - 90
+            # calculate new rotation of ant image
+            angle = calculate_image_angle(new_next_node, ant)
 
             # save current path/edge
-            next_node_id = ant.next_node['id']
-            ant.last_edge_id = f"{next_node_id} {new_next_node_id}"
+            ant.last_edge_id = f"{ant.next_node['id']} {new_next_node_id}"
 
             # update next node
             ant.last_node_id = ant.next_node['id']
             ant.next_node = new_next_node
 
             # rotate ant towards next node
-            print(ant.has_food)
-            if ant.has_food:
-                ant_img_tk = FRAME.ant_food_img.rotate(angle)
-            else:
-                ant_img_tk = FRAME.ant_img.rotate(angle)
+            update_ant_image(canvas, ant, angle, ant_id)
 
-            ant.ant_img = ImageTk.PhotoImage(ant_img_tk)
-            canvas.itemconfig(ant_id,image=ant.ant_img)
-
-            if ant.last_node_id == ant.graph['end_node_id']:
-                ant.has_food = True
-
-            if ant.last_node_id == ant.graph['start_node_id']:
-                ant.has_food = False
+            # determine whether ant carries food
+            set_food_information(ant)
         else:
-            # get remaining distance to next node
-            x_distance = ant.next_node['x'] - x
-            y_distance = ant.next_node['y'] - y
-
-            # distance
-            distance = math.sqrt(x_distance**2 + y_distance**2)
-
-            # number of moves the ant need to take to arrive to the next node
-            steps = math.ceil(distance / ANT_SPEED)
-
             # make one step
-            x_move_ammount = math.ceil(x_distance / steps)
-            y_move_ammount = math.ceil(y_distance / steps)
+            x_move_ammount, y_move_ammount = get_move_ammount(ant, x, y)
             canvas.move(ant_id, x_move_ammount, y_move_ammount)
 
     # evaporate some portion of pheromone on all paths
