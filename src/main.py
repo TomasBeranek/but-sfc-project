@@ -3,6 +3,7 @@
 import argparse
 import json
 import tkinter as tk
+import tkinter.ttk as ttk
 import os
 import sys
 import Pmw
@@ -14,9 +15,6 @@ from PIL import Image, ImageTk
 # ant update their position every TIMER ms
 TIMER = 25
 
-# speed of an ant
-ANT_SPEED = 10
-
 # root of the app
 ROOT = None
 
@@ -27,10 +25,16 @@ FRAME = None
 DEFAULT_PHEROMONE_LEVEL = 0.01
 MIN_PHEROMONE_LEVEL = DEFAULT_PHEROMONE_LEVEL
 MAX_PHEROMONE_LEVEL = 1
-EVAPORATION_PER_SECOND = 0.98 # per second
 ITERATION_CNT = 1
 ALPHA = 1
 BETA = 1
+
+# GUI controls values
+INCREMENT_TYPE = None
+EVAPORATION_PER_SECOND = None
+EVAPORATION_LABEL = None
+SPEED_LABEL = None
+ANT_SPEED = None
 
 
 class bcolors:
@@ -216,7 +220,7 @@ def get_move_ammount(ant, x, y):
     distance = math.sqrt(x_distance**2 + y_distance**2)
 
     # number of moves the ant need to take to arrive to the next node
-    steps = math.ceil(distance / ANT_SPEED)
+    steps = math.ceil(distance / ANT_SPEED.get())
 
     # make one step
     x_move_ammount = math.ceil(x_distance / steps)
@@ -348,6 +352,94 @@ class ACOFrame(tk.Frame):
             # self.balloon.tagbind(self.canvas, line, f'Pheromone level: {...}')
 
 
+def create_increment_type_dropdown(root):
+    global INCREMENT_TYPE
+
+    # dropdown menu options
+    increment_options = [   "1 (constant)",
+                            "1/P (P - cost of path)",
+                            "C/P (C - max edge cost)",
+                            "Pb/P (Pb - best path cost)" ]
+
+    # datatype of menu text
+    INCREMENT_TYPE = tk.StringVar()
+
+    # create label
+    label = tk.Label(root, text="Pheromone increment type", bg="white")
+    label.place(x=1095, y=20)
+
+    # create dropdown menu
+    drop = ttk.Combobox(root, state="readonly", textvariable=INCREMENT_TYPE, values=increment_options, width=21)
+    drop.set(increment_options[0])
+    # drop.bind("<<ComboboxSelected>>", lambda e: frame.focus_force())
+    drop.place(x=1100, y=50)
+
+    # create style for all comboboxes
+    combostyle = ttk.Style()
+    combostyle.theme_create('combostyle', parent='alt',
+                             settings = {'TCombobox':
+                                         {'configure':
+                                          {'selectbackground': '#777777',
+                                           'fieldbackground': 'white',
+                                           'background': 'white'
+                                           }}}
+                             )
+    combostyle.theme_use('combostyle')
+
+
+def update_evaporation_slider_label(event):
+    global EVAPORATION_PER_SECOND, EVAPORATION_LABEL
+
+    val = EVAPORATION_PER_SECOND.get()/100
+    EVAPORATION_LABEL.config(text='{0:.2f}'.format(val))
+
+
+def create_evaporation_slider(root):
+    global EVAPORATION_PER_SECOND, EVAPORATION_LABEL
+
+    # create label
+    label = tk.Label(root, text="Evaporation coeff (per s)", bg="white")
+    label.place(x=1095, y=90)
+
+    # create label with slider value
+    EVAPORATION_LABEL = tk.Label(root, text="0.98", bg="white")
+    EVAPORATION_LABEL.place(x=1260, y=120)
+
+    EVAPORATION_PER_SECOND = tk.DoubleVar()
+    slider = ttk.Scale(root, from_=0, to=100, variable=EVAPORATION_PER_SECOND, length=150, command=update_evaporation_slider_label)
+    slider.set(98)
+    slider.place(x=1100, y=120)
+
+
+def update_speed_slider_label(event):
+    global ANT_SPEED, SPEED_LABEL
+
+    SPEED_LABEL.config(text=str(ANT_SPEED.get()))
+
+
+def create_speed_slider(root):
+    global ANT_SPEED, SPEED_LABEL
+
+    # create label
+    label = tk.Label(root, text="Speed of ants", bg="white")
+    label.place(x=1095, y=160)
+
+    # create label with slider value
+    SPEED_LABEL = tk.Label(root, text="10", bg="white")
+    SPEED_LABEL.place(x=1260, y=190)
+
+    ANT_SPEED = tk.IntVar()
+    slider = ttk.Scale(root, from_=1, to=100, variable=ANT_SPEED, length=150, command=update_speed_slider_label)
+    slider.set(10)
+    slider.place(x=1100, y=190)
+
+
+def create_controls(root):
+    create_increment_type_dropdown(root)
+    create_evaporation_slider(root)
+    create_speed_slider(root)
+
+
 if __name__ == '__main__':
     parser = init_parser()
     args = parser.parse_args()
@@ -368,7 +460,7 @@ if __name__ == '__main__':
 
     # set window size
     root.geometry('1300x700')
-    root.resizable(True, True)
+    root.resizable(False, False)
 
     # set title
     root.title('ACO simulation')
@@ -378,8 +470,13 @@ if __name__ == '__main__':
     img = tk.Image("photo", file=img_path)
     root.tk.call('wm', 'iconphoto', root._w,img)
 
-    # start window loop
+    # create frame with graph
     FRAME = ACOFrame(root, graph, args.ants)
     FRAME.pack(fill="both", expand=True)
+
+    # create GUI controls
+    create_controls(root)
+
+    # start window loop
     root.after(TIMER, ant_timer_event)
     root.mainloop()
