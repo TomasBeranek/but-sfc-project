@@ -136,7 +136,7 @@ def evaporate_pheromone_trails(canvas, graph):
     ITERATION_CNT += 1
 
 
-def get_next_node(curr_node, edges, last_node_id):
+def get_next_node(curr_node, edges, last_node_id, start_node_id):
     global ALPHA, BETA
     adjacent_node_ids = curr_node['adjacent_nodes']
     curr_node_id = curr_node['id']
@@ -145,7 +145,7 @@ def get_next_node(curr_node, edges, last_node_id):
     coef_sum = 0
 
     for node_id in adjacent_node_ids:
-        if last_node_id != node_id:
+        if (curr_node_id == start_node_id) or (last_node_id != node_id):
             edge_id = f'{node_id} {curr_node_id}'
             edge_coef = edges[edge_id]['pheromone_level']**ALPHA * (1 / edges[edge_id]['length'])**BETA # Qij
             coefs[node_id] = edge_coef
@@ -252,7 +252,7 @@ def ant_timer_event():
             add_pheromones_to_edge(canvas, ant)
 
             # calculate the new next node
-            new_next_node_id = get_next_node(ant.next_node, ant.graph['edges'], ant.last_node_id)
+            new_next_node_id = get_next_node(ant.next_node, ant.graph['edges'], ant.last_node_id, ant.graph['start_node_id'])
             new_next_node = ant.graph['nodes'][new_next_node_id]
 
             # calculate new rotation of ant image
