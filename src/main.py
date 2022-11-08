@@ -265,11 +265,11 @@ def ant_timer_event():
             ant.last_node_id = ant.next_node['id']
             ant.next_node = new_next_node
 
-            # rotate ant towards next node
-            update_ant_image(canvas, ant, angle, ant_id)
-
             # determine whether ant carries food
             set_food_information(ant)
+
+            # rotate ant towards next node
+            update_ant_image(canvas, ant, angle, ant_id)
         else:
             # make one step
             x_move_ammount, y_move_ammount = get_move_ammount(ant, x, y)
@@ -290,7 +290,7 @@ class Ant:
         self.running = False
         self.last_edge_id = None
         self.has_food = False
-        self.last_node_id = None
+        self.last_node_id = graph['start_node_id']
 
 
 class ACOFrame(tk.Frame):
