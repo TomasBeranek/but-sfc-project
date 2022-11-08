@@ -174,14 +174,12 @@ def update_path_color(canvas, line_id, pheromone_level):
 
 
 def add_pheromones_to_edge(canvas, ant):
-    if ant.last_edge_id:
-        if ant.has_food:
-            ant.graph['edges'][ant.last_edge_id]['pheromone_level'] += 100
+    ant.graph['edges'][ant.last_edge_id]['pheromone_level'] += 100
 
-        # update color of given path based on pheromone level
-        line_id = ant.graph['edges'][ant.last_edge_id]['line_object_id']
-        pheromone_level = ant.graph['edges'][ant.last_edge_id]['pheromone_level']
-        update_path_color(canvas, line_id, pheromone_level)
+    # update color of given path based on pheromone level
+    line_id = ant.graph['edges'][ant.last_edge_id]['line_object_id']
+    pheromone_level = ant.graph['edges'][ant.last_edge_id]['pheromone_level']
+    update_path_color(canvas, line_id, pheromone_level)
 
 
 def calculate_image_angle(new_next_node, ant):
@@ -230,11 +228,24 @@ def get_move_ammount(ant, x, y):
 
 
 def set_food_information(ant):
-    if ant.last_node_id == ant.graph['end_node_id']:
+    if ant.next_node['id'] == ant.graph['end_node_id']:
+        if not ant.has_food:
+            ant.recently_acquired_food = True
         ant.has_food = True
-
-    if ant.last_node_id == ant.graph['start_node_id']:
+    elif ant.next_node['id'] == ant.graph['start_node_id']:
+        if ant.has_food:
+            ant.recently_deposited_food = True
         ant.has_food = False
+
+
+
+def save_node_to_path(ant):
+    # check if there is a loop in the path
+    if ant.next_node['id'] in ant.path:
+        start_of_loop_index = ant.path.index(ant.next_node['id'])
+        # remove whole loop
+        ant.path = ant.path[:start_of_loop_index]
+    ant.path.append(ant.next_node['id'])
 
 
 def ant_timer_event():
@@ -248,11 +259,32 @@ def ant_timer_event():
 
         # if ant arrived to the next node
         if x == ant.next_node['x'] and y == ant.next_node['y']:
-            # add pheromones to the last edge
-            add_pheromones_to_edge(canvas, ant)
+            # determine whether ant carries food
+            set_food_information(ant)
 
-            # calculate the new next node
-            new_next_node_id = get_next_node(ant.next_node, ant.graph['edges'], ant.last_node_id, ant.graph['start_node_id'])
+            if ant.has_food and ant.path:
+                # ant is coming back to start on given path
+                # add pheromones, but don't add them to edge before end
+                if not ant.recently_acquired_food:
+                    add_pheromones_to_edge(canvas, ant)
+
+                ant.recently_acquired_food = False
+
+                # ant is going in a reversed path
+                new_next_node_id = ant.path.pop()
+            else:
+                # ant is looking for food
+                # save last node to ant's path
+                save_node_to_path(ant)
+
+                # add pheromones to the last edge before ant deposited food
+                if ant.recently_deposited_food:
+                    add_pheromones_to_edge(canvas, ant)
+                    ant.recently_deposited_food = False
+
+                # calculate the new next node
+                new_next_node_id = get_next_node(ant.next_node, ant.graph['edges'], ant.last_node_id, ant.graph['start_node_id'])
+
             new_next_node = ant.graph['nodes'][new_next_node_id]
 
             # calculate new rotation of ant image
@@ -264,9 +296,6 @@ def ant_timer_event():
             # update next node
             ant.last_node_id = ant.next_node['id']
             ant.next_node = new_next_node
-
-            # determine whether ant carries food
-            set_food_information(ant)
 
             # rotate ant towards next node
             update_ant_image(canvas, ant, angle, ant_id)
@@ -291,6 +320,8 @@ class Ant:
         self.last_edge_id = None
         self.has_food = False
         self.last_node_id = graph['start_node_id']
+        self.path = []
+        self.recently_deposited_food = False
 
 
 class ACOFrame(tk.Frame):
@@ -430,7 +461,7 @@ def create_speed_slider(root):
 
     ANT_SPEED = tk.IntVar()
     slider = ttk.Scale(root, from_=1, to=100, variable=ANT_SPEED, length=150, command=update_speed_slider_label)
-    slider.set(10)
+    slider.set(2)
     slider.place(x=1100, y=190)
 
 
