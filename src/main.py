@@ -242,7 +242,6 @@ def set_food_information(ant):
         ant.has_food = False
 
 
-
 def save_node_to_path(ant):
     # check if there is a loop in the path
     if ant.next_node['id'] in ant.path:
@@ -272,7 +271,6 @@ def calculate_pheromone_increments(ant):
     entire_length = sum(path)
     BEST_FOUND_PATH_LEN = min(BEST_FOUND_PATH_LEN, entire_length)
 
-    print(INCREMENT_TYPE.get())
     if INCREMENT_TYPE.get() == '1 (constant)':
         ant.pheromone_increment = 1
     elif INCREMENT_TYPE.get() == '1/P (P - cost of path)':
@@ -281,8 +279,6 @@ def calculate_pheromone_increments(ant):
         ant.pheromone_increment = MAX_EDGE_LEN/entire_length
     elif INCREMENT_TYPE.get() == 'Pb/P (Pb - best path cost)':
         ant.pheromone_increment = BEST_FOUND_PATH_LEN/entire_length
-
-    print(ant.pheromone_increment)
 
 
 def ant_timer_event():
@@ -293,6 +289,10 @@ def ant_timer_event():
     for ant_id in canvas.find_withtag("ant"):
         x, y = canvas.coords(ant_id)
         ant = ants[ant_id]
+
+        if ant.start_delay:
+            ant.start_delay = False
+            break
 
         # if ant arrived to the next node
         if x == ant.next_node['x'] and y == ant.next_node['y']:
@@ -364,6 +364,7 @@ class Ant:
         self.path = []
         self.recently_deposited_food = False
         self.pheromone_increment = None
+        self.start_delay = True
 
 
 class ACOFrame(tk.Frame):
@@ -503,7 +504,7 @@ def create_speed_slider(root):
 
     ANT_SPEED = tk.IntVar()
     slider = ttk.Scale(root, from_=1, to=100, variable=ANT_SPEED, length=150, command=update_speed_slider_label)
-    slider.set(2)
+    slider.set(10)
     slider.place(x=1100, y=190)
 
 
