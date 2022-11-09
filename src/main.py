@@ -22,12 +22,14 @@ ROOT = None
 FRAME = None
 
 # ACO settings
-DEFAULT_PHEROMONE_LEVEL = 0.01
+DEFAULT_PHEROMONE_LEVEL = 0.001
 MIN_PHEROMONE_LEVEL = DEFAULT_PHEROMONE_LEVEL
 MAX_PHEROMONE_LEVEL = 1
 ITERATION_CNT = 1
 ALPHA = 1
 BETA = 1
+BEST_FOUND_PATH_LEN = sys.maxsize
+MAX_EDGE_LEN = -1
 
 # GUI controls values
 INCREMENT_TYPE = None
@@ -87,7 +89,7 @@ def check_graph_correctness(graph):
 
 
 def restructure_graph(graph):
-    global DEFAULT_PHEROMONE_LEVEL
+    global DEFAULT_PHEROMONE_LEVEL, MAX_EDGE_LEN
 
     nodes = {}
     edges = {}
@@ -111,6 +113,8 @@ def restructure_graph(graph):
         y = nodes[from_node_id]['y'] - nodes[to_node_id]['y']
         edge['length'] = math.sqrt(x**2 + y**2)
         edge['pheromone_level'] = DEFAULT_PHEROMONE_LEVEL
+
+    MAX_EDGE_LEN = max([edge['length'] for edge in edges.values()])
 
     # update old graph
     graph["nodes"] = nodes
@@ -174,7 +178,7 @@ def update_path_color(canvas, line_id, pheromone_level):
 
 
 def add_pheromones_to_edge(canvas, ant):
-    ant.graph['edges'][ant.last_edge_id]['pheromone_level'] += 100
+    ant.graph['edges'][ant.last_edge_id]['pheromone_level'] += ant.pheromone_increment
 
     # update color of given path based on pheromone level
     line_id = ant.graph['edges'][ant.last_edge_id]['line_object_id']
@@ -248,6 +252,39 @@ def save_node_to_path(ant):
     ant.path.append(ant.next_node['id'])
 
 
+# function runs only immediately after picking up food
+def calculate_pheromone_increments(ant):
+    global BEST_FOUND_PATH_LEN, INCREMENT_TYPE, MAX_EDGE_LEN
+
+    path = ant.path.copy()
+    path.append(ant.graph['end_node_id'])
+
+    edges = []
+    prev_node_id = path[0]
+
+    for node_id in path[1:]:
+        edges.append(f'{prev_node_id} {node_id}')
+        prev_node_id = node_id
+
+    # get lengths for each edge
+    path = [ant.graph['edges'][edge_id]['length'] for edge_id in edges]
+
+    entire_length = sum(path)
+    BEST_FOUND_PATH_LEN = min(BEST_FOUND_PATH_LEN, entire_length)
+
+    print(INCREMENT_TYPE.get())
+    if INCREMENT_TYPE.get() == '1 (constant)':
+        ant.pheromone_increment = 1
+    elif INCREMENT_TYPE.get() == '1/P (P - cost of path)':
+        ant.pheromone_increment = 1/entire_length
+    elif INCREMENT_TYPE.get() == 'C/P (C - max edge cost)':
+        ant.pheromone_increment = MAX_EDGE_LEN/entire_length
+    elif INCREMENT_TYPE.get() == 'Pb/P (Pb - best path cost)':
+        ant.pheromone_increment = BEST_FOUND_PATH_LEN/entire_length
+
+    print(ant.pheromone_increment)
+
+
 def ant_timer_event():
     global TIMER, ANT_SPEED, ROOT, FRAME, ITERATION_CNT, EVAPORATION_PER_SECOND, MIN_PHEROMONE_LEVEL
     canvas = FRAME.canvas
@@ -267,6 +304,10 @@ def ant_timer_event():
                 # add pheromones, but don't add them to edge before end
                 if not ant.recently_acquired_food:
                     add_pheromones_to_edge(canvas, ant)
+
+                if ant.recently_acquired_food:
+                    # calculate pheromone increments for each edge
+                    calculate_pheromone_increments(ant)
 
                 ant.recently_acquired_food = False
 
@@ -322,6 +363,7 @@ class Ant:
         self.last_node_id = graph['start_node_id']
         self.path = []
         self.recently_deposited_food = False
+        self.pheromone_increment = None
 
 
 class ACOFrame(tk.Frame):
