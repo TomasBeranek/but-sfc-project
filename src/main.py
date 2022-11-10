@@ -214,6 +214,9 @@ def update_ant_image(canvas, ant, angle, ant_id):
 def get_move_ammount(ant, x, y):
     global ANT_SPEED
 
+    if ANT_SPEED.get() == 0:
+        return 0, 0
+
     # get remaining distance to next node
     x_distance = ant.next_node['x'] - x
     y_distance = ant.next_node['y'] - y
@@ -503,7 +506,7 @@ def create_speed_slider(root):
     SPEED_LABEL.place(x=1260, y=190)
 
     ANT_SPEED = tk.IntVar()
-    slider = ttk.Scale(root, from_=1, to=100, variable=ANT_SPEED, length=150, command=update_speed_slider_label)
+    slider = ttk.Scale(root, from_=0, to=100, variable=ANT_SPEED, length=150, command=update_speed_slider_label)
     slider.set(10)
     slider.place(x=1100, y=190)
 
