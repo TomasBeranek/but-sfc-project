@@ -224,9 +224,9 @@ def get_move_ammount(ant, x, y):
     # number of moves the ant need to take to arrive to the next node
     steps = math.ceil(distance / ANT_SPEED.get())
 
-    # make one step
-    x_move_ammount = math.ceil(x_distance / steps)
-    y_move_ammount = math.ceil(y_distance / steps)
+    # calculate ammount of pixels for ant's move
+    x_move_ammount = x_distance / steps
+    y_move_ammount = y_distance / steps
 
     return x_move_ammount, y_move_ammount
 
