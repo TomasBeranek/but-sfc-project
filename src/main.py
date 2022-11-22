@@ -123,8 +123,8 @@ def restructure_graph(graph):
     return graph
 
 
-def create_circle(x, y, r, canvas):
-    return canvas.create_oval(x - r, y - r, x + r, y + r, fill='#3e3e3e', outline='#2c2c2c', width=5, activefill="#4e4e4e")
+def create_circle(x, y, r, canvas, fill='#3e3e3e', activefill='#4e4e4e'):
+    return canvas.create_oval(x - r, y - r, x + r, y + r, fill=fill, outline='#2c2c2c', width=5, activefill=activefill)
 
 
 def evaporate_pheromone_trails(canvas, graph):
@@ -404,15 +404,24 @@ class ACOFrame(tk.Frame):
 
         # display graph over ants
         self.draw_edges(graph)
-        self.draw_nodes(graph["nodes"])
+        self.draw_nodes(graph)
 
         self.graph = graph
 
 
-    def draw_nodes(self, nodes):
+    def draw_nodes(self, graph):
+        nodes = graph['nodes']
+
         for id, node in nodes.items():
-            circle = create_circle(node['x'], node['y'], 25, self.canvas)
-            self.balloon.tagbind(self.canvas, circle, f'ID: {id}')
+            if id == graph['start_node_id']:
+                circle = create_circle(node['x'], node['y'], 25, self.canvas, fill='green', activefill='darkgreen')
+                self.balloon.tagbind(self.canvas, circle, f'START ID: {id}')
+            elif id == graph['end_node_id']:
+                circle = create_circle(node['x'], node['y'], 25, self.canvas, fill='yellow', activefill='orange')
+                self.balloon.tagbind(self.canvas, circle, f'END ID: {id}')
+            else:
+                circle = create_circle(node['x'], node['y'], 25, self.canvas)
+                self.balloon.tagbind(self.canvas, circle, f'ID: {id}')
 
     def draw_edges(self, graph):
         for edge in graph['edges'].values():
