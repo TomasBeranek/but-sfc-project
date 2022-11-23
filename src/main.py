@@ -657,7 +657,7 @@ if __name__ == '__main__':
 
     # set icon
     img_path = os.path.dirname(os.path.realpath(__file__)) + '/../gui_images/ant_icon.png'
-    img = tk.Image("photo", file=img_path)
+    img = ImageTk.PhotoImage(Image.open(img_path))
     root.tk.call('wm', 'iconphoto', root._w,img)
 
     # create frame with graph
