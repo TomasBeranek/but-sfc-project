@@ -22,14 +22,14 @@ ROOT = None
 FRAME = None
 
 # ACO settings
-DEFAULT_PHEROMONE_LEVEL = 0.001
-MIN_PHEROMONE_LEVEL = DEFAULT_PHEROMONE_LEVEL
+MIN_PHEROMONE_LEVEL = 0.001
 MAX_PHEROMONE_LEVEL = 1
 ITERATION_CNT = 1
 ALPHA = 1
 BETA = 1
 BEST_FOUND_PATH_LEN = sys.maxsize
 MAX_EDGE_LEN = -1
+HIGHEST_PHEROMONE_LEVEL = MIN_PHEROMONE_LEVEL
 
 # GUI controls values
 INCREMENT_TYPE = None
@@ -89,7 +89,7 @@ def check_graph_correctness(graph):
 
 
 def restructure_graph(graph):
-    global DEFAULT_PHEROMONE_LEVEL, MAX_EDGE_LEN
+    global MIN_PHEROMONE_LEVEL, MAX_EDGE_LEN
 
     nodes = {}
     edges = {}
@@ -112,7 +112,7 @@ def restructure_graph(graph):
         x = nodes[from_node_id]['x'] - nodes[to_node_id]['x']
         y = nodes[from_node_id]['y'] - nodes[to_node_id]['y']
         edge['length'] = math.sqrt(x**2 + y**2)
-        edge['pheromone_level'] = DEFAULT_PHEROMONE_LEVEL
+        edge['pheromone_level'] = MIN_PHEROMONE_LEVEL
 
     MAX_EDGE_LEN = max([edge['length'] for edge in edges.values()])
 
@@ -134,9 +134,6 @@ def evaporate_pheromone_trails(canvas, graph):
         for edge in graph['edges'].values():
             edge['pheromone_level'] *= EVAPORATION_PER_SECOND.get()/100
             edge['pheromone_level'] = max(edge['pheromone_level'], MIN_PHEROMONE_LEVEL)
-
-            # update color of given path based on pheromone level
-            update_path_color(canvas, edge['line_object_id'], edge['pheromone_level'])
     ITERATION_CNT += 1
 
 
@@ -167,23 +164,24 @@ def get_next_node(curr_node, edges, last_node_id, start_node_id):
 
 
 def update_path_color(canvas, line_id, pheromone_level):
-    hex_color = canvas.itemcget(line_id, 'fill')
-    hex_red = hex_color[1:3]
-    red = int(hex_red, 16)
-    DEFAULT_RED = 44
-    new_red = min(255, DEFAULT_RED + pheromone_level)
-    hex_new_red = "%0.2X" % int(new_red)
+    global HIGHEST_PHEROMONE_LEVEL, MIN_PHEROMONE_LEVEL
+
+    # all the edges are pheromone free
+    if HIGHEST_PHEROMONE_LEVEL == MIN_PHEROMONE_LEVEL:
+        return
+
+    pheromone_range = HIGHEST_PHEROMONE_LEVEL - MIN_PHEROMONE_LEVEL
+    # in range <0,1>
+    new_red_value = (pheromone_level - MIN_PHEROMONE_LEVEL)/pheromone_range
+    # in range <0,255>
+    new_red_value *= 255
+    hex_new_red = "%0.2X" % int(new_red_value)
     # set new color
     canvas.itemconfigure(line_id, fill='#' + hex_new_red + '2c2c')
 
 
 def add_pheromones_to_edge(canvas, ant):
     ant.graph['edges'][ant.last_edge_id]['pheromone_level'] += ant.pheromone_increment
-
-    # update color of given path based on pheromone level
-    line_id = ant.graph['edges'][ant.last_edge_id]['line_object_id']
-    pheromone_level = ant.graph['edges'][ant.last_edge_id]['pheromone_level']
-    update_path_color(canvas, line_id, pheromone_level)
 
 
 def calculate_image_angle(new_next_node, ant):
@@ -285,7 +283,7 @@ def calculate_pheromone_increments(ant):
 
 
 def ant_timer_event():
-    global TIMER, ANT_SPEED, ROOT, FRAME, ITERATION_CNT, EVAPORATION_PER_SECOND, MIN_PHEROMONE_LEVEL
+    global TIMER, ANT_SPEED, ROOT, FRAME, ITERATION_CNT, EVAPORATION_PER_SECOND, MIN_PHEROMONE_LEVEL, HIGHEST_PHEROMONE_LEVEL
     canvas = FRAME.canvas
     ants = FRAME.ants
 
@@ -350,6 +348,15 @@ def ant_timer_event():
 
     # evaporate some portion of pheromone on all paths
     evaporate_pheromone_trails(canvas, FRAME.graph)
+
+    # get highest pheromone level in graph
+    HIGHEST_PHEROMONE_LEVEL = max(edge['pheromone_level'] for edge in FRAME.graph['edges'].values())
+
+    # update color of all paths
+    for edge in FRAME.graph['edges'].values():
+        line_id = edge['line_object_id']
+        pheromone_level = edge['pheromone_level']
+        update_path_color(canvas, line_id, pheromone_level)
 
     ROOT.after(TIMER, ant_timer_event)
 
