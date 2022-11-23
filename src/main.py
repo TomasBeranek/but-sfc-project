@@ -26,6 +26,7 @@ MIN_PHEROMONE_LEVEL = 0.001
 MAX_PHEROMONE_LEVEL = 1
 ITERATION_CNT = 1
 BEST_FOUND_PATH_LEN = sys.maxsize
+BEST_FOUND_PATH = []
 MAX_EDGE_LEN = -1
 HIGHEST_PHEROMONE_LEVEL = MIN_PHEROMONE_LEVEL
 
@@ -260,8 +261,8 @@ def save_node_to_path(ant):
 
 
 # function runs only immediately after picking up food
-def calculate_pheromone_increments(ant):
-    global BEST_FOUND_PATH_LEN, INCREMENT_TYPE, MAX_EDGE_LEN
+def calculate_pheromone_increments(canvas, ant):
+    global BEST_FOUND_PATH_LEN, INCREMENT_TYPE, MAX_EDGE_LEN, BEST_FOUND_PATH
 
     path = ant.path.copy()
     path.append(ant.graph['end_node_id'])
@@ -274,10 +275,25 @@ def calculate_pheromone_increments(ant):
         prev_node_id = node_id
 
     # get lengths for each edge
-    path = [ant.graph['edges'][edge_id]['length'] for edge_id in edges]
+    path_lens = [ant.graph['edges'][edge_id]['length'] for edge_id in edges]
+    entire_length = sum(path_lens)
 
-    entire_length = sum(path)
-    BEST_FOUND_PATH_LEN = min(BEST_FOUND_PATH_LEN, entire_length)
+    if entire_length < BEST_FOUND_PATH_LEN:
+        BEST_FOUND_PATH_LEN = entire_length
+        BEST_FOUND_PATH = path
+        print(f'New best path with length {BEST_FOUND_PATH_LEN}: ', end='')
+        print(BEST_FOUND_PATH)
+
+        # clear all highlighting
+        for edge in ant.graph['edges'].values():
+            line_border_id = edge['line_border_object_id']
+            canvas.itemconfigure(line_border_id, fill='white')
+
+        # highlight the best path
+        for edge_id in edges:
+            line_border_id = ant.graph['edges'][edge_id]['line_border_object_id']
+            canvas.itemconfigure(line_border_id, fill='#2ba8fc')
+
 
     if INCREMENT_TYPE.get() == '1 (constant)':
         ant.pheromone_increment = 1
@@ -315,7 +331,7 @@ def ant_timer_event():
 
                 if ant.recently_acquired_food:
                     # calculate pheromone increments for each edge
-                    calculate_pheromone_increments(ant)
+                    calculate_pheromone_increments(canvas, ant)
 
                 ant.recently_acquired_food = False
 
@@ -410,6 +426,9 @@ class ACOFrame(tk.Frame):
         start_node_x = graph['nodes'][graph['start_node_id']]['x']
         start_node_y = graph['nodes'][graph['start_node_id']]['y']
 
+        # draw edges borders before ants, so that ants are in higher canvas level
+        self.draw_edges_border(graph)
+
         for i in range(ants):
             id = self.canvas.create_image(start_node_x, start_node_y, image=ant_img_tk, tags='ant')
             ant = Ant(id, graph)
@@ -449,7 +468,19 @@ class ACOFrame(tk.Frame):
 
             line = self.canvas.create_line(x1, y1, x2, y2, fill='#2c2c2c', width=7)
             edge['line_object_id'] = line
-            # self.balloon.tagbind(self.canvas, line, f'Pheromone level: {...}')
+
+    def draw_edges_border(self, graph):
+        for edge in graph['edges'].values():
+            start = edge["from_node_id"]
+            end = edge["to_node_id"]
+
+            x1 = graph['nodes'][start]['x']
+            y1 = graph['nodes'][start]['y']
+            x2 = graph['nodes'][end]['x']
+            y2 = graph['nodes'][end]['y']
+
+            line_border = self.canvas.create_line(x1, y1, x2, y2, fill='white', width=13)
+            edge['line_border_object_id'] = line_border
 
 
 def create_increment_type_dropdown(root):
