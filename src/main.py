@@ -1,12 +1,14 @@
 #!/usr/bin/env python3.9
 
+# python3.6 on Merlin does not have Pmw
+# import Pmw
+
 import argparse
 import json
 import tkinter as tk
 import tkinter.ttk as ttk
 import os
 import sys
-import Pmw
 import random
 import math
 import numpy as np
@@ -409,7 +411,8 @@ class ACOFrame(tk.Frame):
         self.canvas.pack(fill='both', expand=True)
 
         # for tooltips
-        self.balloon = Pmw.Balloon()
+        # python3.6 on Merlin does not have Pmw
+        # self.balloon = Pmw.Balloon()
 
         # prepare to save ants
         self.ants = {}
@@ -448,13 +451,16 @@ class ACOFrame(tk.Frame):
         for id, node in nodes.items():
             if id == graph['start_node_id']:
                 circle = create_circle(node['x'], node['y'], 25, self.canvas, fill='green', activefill='darkgreen')
-                self.balloon.tagbind(self.canvas, circle, f'START ID: {id}')
+                # python3.6 on Merlin does not have Pmw
+                # self.balloon.tagbind(self.canvas, circle, f'START ID: {id}')
             elif id == graph['end_node_id']:
                 circle = create_circle(node['x'], node['y'], 25, self.canvas, fill='yellow', activefill='orange')
-                self.balloon.tagbind(self.canvas, circle, f'END ID: {id}')
+                # python3.6 on Merlin does not have Pmw
+                # self.balloon.tagbind(self.canvas, circle, f'END ID: {id}')
             else:
                 circle = create_circle(node['x'], node['y'], 25, self.canvas)
-                self.balloon.tagbind(self.canvas, circle, f'ID: {id}')
+                # python3.6 on Merlin does not have Pmw
+                # self.balloon.tagbind(self.canvas, circle, f'ID: {id}')
 
     def draw_edges(self, graph):
         for edge in graph['edges'].values():
@@ -638,7 +644,9 @@ if __name__ == '__main__':
 
     root = tk.Tk()
     ROOT = root
-    Pmw.initialise(root)
+
+    # python3.6 on Merlin does not have Pmw
+    # Pmw.initialise(root)
 
     # set window size
     root.geometry('1300x700')
