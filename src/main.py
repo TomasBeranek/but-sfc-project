@@ -25,13 +25,15 @@ FRAME = None
 MIN_PHEROMONE_LEVEL = 0.001
 MAX_PHEROMONE_LEVEL = 1
 ITERATION_CNT = 1
-ALPHA = 1
-BETA = 1
 BEST_FOUND_PATH_LEN = sys.maxsize
 MAX_EDGE_LEN = -1
 HIGHEST_PHEROMONE_LEVEL = MIN_PHEROMONE_LEVEL
 
 # GUI controls values
+ALPHA = None
+BETA = None
+ALPHA_LABEL = None
+BETA_LABEL = None
 INCREMENT_TYPE = None
 EVAPORATION_PER_SECOND = None
 EVAPORATION_LABEL = None
@@ -126,6 +128,9 @@ def restructure_graph(graph):
 def create_circle(x, y, r, canvas, fill='#3e3e3e', activefill='#4e4e4e'):
     return canvas.create_oval(x - r, y - r, x + r, y + r, fill=fill, outline='#2c2c2c', width=5, activefill=activefill)
 
+def calculate_alpha_beta(x):
+    # x can alpha or beta, but they are calculated in a same way from slider value
+    return (x - 100) / 100
 
 def evaporate_pheromone_trails(canvas, graph):
     global ITERATION_CNT, TIMER
@@ -148,7 +153,9 @@ def get_next_node(curr_node, edges, last_node_id, start_node_id):
     for node_id in adjacent_node_ids:
         if (curr_node_id == start_node_id) or (last_node_id != node_id):
             edge_id = f'{node_id} {curr_node_id}'
-            edge_coef = edges[edge_id]['pheromone_level']**ALPHA * (1 / edges[edge_id]['length'])**BETA # Qij
+            alpha = calculate_alpha_beta(ALPHA.get())
+            beta = calculate_alpha_beta(BETA.get())
+            edge_coef = edges[edge_id]['pheromone_level']**alpha * (1 / edges[edge_id]['length'])**beta # Qij
             coefs[node_id] = edge_coef
             coef_sum += edge_coef
 
@@ -527,10 +534,61 @@ def create_speed_slider(root):
     slider.place(x=1100, y=190)
 
 
+def update_alpha_slider_label(event):
+    global ALPHA, ALPHA_LABEL
+
+    alpha = calculate_alpha_beta(ALPHA.get())
+    ALPHA_LABEL.config(text=('%0.2f' % alpha).rjust(5))
+
+
+def create_alpha_slider(root):
+    global ALPHA, ALPHA_LABEL
+
+    # create label
+    label = tk.Label(root, text="Alpha (pheromones)", bg="white")
+    label.place(x=1095, y=230)
+
+    # create label with slider value
+    ALPHA_LABEL = tk.Label(root, text="1", bg="white")
+    ALPHA_LABEL.place(x=1257, y=260)
+
+    ALPHA = tk.IntVar()
+    slider = ttk.Scale(root, from_=0, to=200, variable=ALPHA, length=150, command=update_alpha_slider_label)
+    slider.set(200)
+    slider.place(x=1100, y=260)
+
+
+def update_beta_slider_label(event):
+    global BETA, BETA_LABEL
+
+    beta = calculate_alpha_beta(BETA.get())
+    BETA_LABEL.config(text=('%0.2f' % beta).rjust(5))
+
+
+def create_beta_slider(root):
+    global BETA, BETA_LABEL
+
+    # create label
+    label = tk.Label(root, text="Beta (edge length)", bg="white")
+    label.place(x=1095, y=300)
+
+    # create label with slider value
+    BETA_LABEL = tk.Label(root, text="1", bg="white")
+    BETA_LABEL.place(x=1257, y=330)
+
+    BETA = tk.IntVar()
+    slider = ttk.Scale(root, from_=0, to=200, variable=BETA, length=150, command=update_beta_slider_label)
+    slider.set(200)
+    slider.place(x=1100, y=330)
+
+
 def create_controls(root):
     create_increment_type_dropdown(root)
     create_evaporation_slider(root)
     create_speed_slider(root)
+    create_alpha_slider(root)
+    create_beta_slider(root)
+
 
 
 if __name__ == '__main__':
