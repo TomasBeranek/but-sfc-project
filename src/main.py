@@ -1,7 +1,4 @@
-#!/usr/bin/env python3.9
-
-# python3.6 on Merlin does not have Pmw
-# import Pmw
+#!/usr/bin/env python3.8
 
 import argparse
 import json
@@ -13,6 +10,10 @@ import random
 import math
 import numpy as np
 from PIL import Image, ImageTk
+
+
+# just because some dependencies are missing on Merlin server
+RUNNING_ON_MERLIN = False
 
 # ant update their position every TIMER ms
 TIMER = 25
@@ -61,6 +62,7 @@ def init_parser():
 
     parser.add_argument('-g', '--graph-file', required=True, type=str, help='input JSON file with a graph definition')
     parser.add_argument('-a', '--ants', required=True, type=int, help='number of ants')
+    parser.add_argument('--merlin', action='store_true', help='if program should run on Merlin server')
 
     return parser
 
@@ -410,9 +412,10 @@ class ACOFrame(tk.Frame):
         self.canvas = tk.Canvas(self, bg='white', highlightthickness=0)
         self.canvas.pack(fill='both', expand=True)
 
-        # for tooltips
         # python3.6 on Merlin does not have Pmw
-        # self.balloon = Pmw.Balloon()
+        if not RUNNING_ON_MERLIN:
+            # for tooltips
+            self.balloon = Pmw.Balloon()
 
         # prepare to save ants
         self.ants = {}
@@ -452,15 +455,18 @@ class ACOFrame(tk.Frame):
             if id == graph['start_node_id']:
                 circle = create_circle(node['x'], node['y'], 25, self.canvas, fill='green', activefill='darkgreen')
                 # python3.6 on Merlin does not have Pmw
-                # self.balloon.tagbind(self.canvas, circle, f'START ID: {id}')
+                if not RUNNING_ON_MERLIN:
+                    self.balloon.tagbind(self.canvas, circle, f'START ID: {id}')
             elif id == graph['end_node_id']:
                 circle = create_circle(node['x'], node['y'], 25, self.canvas, fill='yellow', activefill='orange')
                 # python3.6 on Merlin does not have Pmw
-                # self.balloon.tagbind(self.canvas, circle, f'END ID: {id}')
+                if not RUNNING_ON_MERLIN:
+                    self.balloon.tagbind(self.canvas, circle, f'END ID: {id}')
             else:
                 circle = create_circle(node['x'], node['y'], 25, self.canvas)
                 # python3.6 on Merlin does not have Pmw
-                # self.balloon.tagbind(self.canvas, circle, f'ID: {id}')
+                if not RUNNING_ON_MERLIN:
+                    self.balloon.tagbind(self.canvas, circle, f'ID: {id}')
 
     def draw_edges(self, graph):
         for edge in graph['edges'].values():
@@ -627,10 +633,12 @@ def create_controls(root):
     create_beta_slider(root)
 
 
-
 if __name__ == '__main__':
     parser = init_parser()
     args = parser.parse_args()
+
+    if args.merlin:
+        RUNNING_ON_MERLIN = True
 
     # load graph in JSON format
     with open(args.graph_file, 'r') as f:
@@ -646,7 +654,9 @@ if __name__ == '__main__':
     ROOT = root
 
     # python3.6 on Merlin does not have Pmw
-    # Pmw.initialise(root)
+    if not RUNNING_ON_MERLIN:
+        import Pmw
+        Pmw.initialise(root)
 
     # set window size
     root.geometry('1300x700')
