@@ -17,3 +17,9 @@ run:
 
 install:
 	python3.8 -m pip install -r requirements.txt
+
+zip:
+	zip -9 -r xberan46.zip doc-src/ documentation-cz.pdf graphs/ gui_images/ Makefile README.md requirements.txt src/
+
+clean:
+	rm -f xberan46.zip
