@@ -1,3 +1,10 @@
+# ******************************* Makefile **********************************
+#  Course: Soft Computing (SFC) - FIT BUT
+#  Project name: Shortest path search simulation using ACO
+#  Author: Beranek Tomas (xberan46)
+#  Date: 26.11.2022
+# ***************************************************************************
+
 ANTS_NUM=50
 GRAPH_FILE=graphs/graph3.json
 

@@ -1,5 +1,13 @@
 #!/usr/bin/env python3.8
 
+# ******************************* main.py ***********************************
+#  Course: Soft Computing (SFC) - FIT BUT
+#  Project name: Shortest path search simulation using ACO
+#  Author: Beranek Tomas (xberan46)
+#  Date: 26.11.2022
+# ***************************************************************************
+
+
 import argparse
 import json
 import tkinter as tk
