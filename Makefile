@@ -5,4 +5,7 @@ run-merlin:
 	python3.6 src/main.py --merlin -a $(ANTS_NUM) -g $(GRAPH_FILE)
 
 run:
-	python3 src/main.py -a $(ANTS_NUM) -g $(GRAPH_FILE)
+	python3.8 src/main.py -a $(ANTS_NUM) -g $(GRAPH_FILE)
+
+install:
+	python3.8 -m pip install -r requirements.txt
