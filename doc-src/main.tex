@@ -1,0 +1,173 @@
+\documentclass[12pt]{article}
+\usepackage[czech]{babel}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{vmargin}
+\setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{fixltx2e}
+\usepackage{textgreek}
+\usepackage{multicol}
+\usepackage[hidelinks, colorlinks=true]{hyperref}
+\setcitestyle{square}
+
+
+							
+\makeatletter
+\let\thetitle\@title
+
+
+\makeatother
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\theauthor}
+\lhead{\thetitle}
+\cfoot{\thepage}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{titlepage}
+	\centering
+	\hspace{1 cm}
+    \includegraphics[scale = 0.35]{FIT_logo.png}\\[1.0 cm]	% University Logo
+    \hspace{1 cm}
+    \textsc{\LARGE Projektová dokumentace SFC}\\[2.0 cm]
+    \hspace{1 cm}
+    \textsc{\LARGE Simulace ACO pro hledání\\ \hspace{1 cm} nejkratší cesty}\\[0.2 cm]
+
+
+	\quad\rule{15 cm}{0.2 mm}
+	{ \huge \bfseries \thetitle}\\
+	
+	\vspace{1 cm}
+	\begin{minipage}{0.45\textwidth}
+		
+            \newline
+			\emph{Autor:} \\
+			\textbf{Tomáš Beránek (xberan46)} \linebreak\\[2.0 cm]
+	\end{minipage}\\[0 cm]
+	
+    \vspace{6 cm}
+    \begin{flushleft}
+   	    E-mail:\hspace{4 cm}\textbf{xberan46@stud.fit.vutbr.cz} \linebreak
+        Datum vytvoření:\hspace{2.1 cm}\textbf{25. listopadu 2022} \linebreak
+    \end{flushleft}
+
+	\vfill
+    \fancyhf{}
+\end{titlepage}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+\afterpage{\cfoot{\thepage }}
+\section{Úvod}
+Projekt se zabývá vytvořením simulace průběhu hledání nejkratší cesty pomocí ACO\footnote{\textbf{ACO} -- Ant Colony Optimization.}. ACO se často spojuje s TSP\footnote{\textbf{TSP} -- Traveling Salesman Problem.}, jedná se však o meta-heuristiku aplikovatelnou na mnoho optimalizačních problémů s jen drobnými úpravami \cite{dorigo2006ant}. Jedním takovým příkladem je využití ACO k hledání obecné nejkratší cesty v grafu mezi dvěma body. Tento projekt je inspirován zejména algoritmem ShortestPathACO \cite{glabowski2012shortest} a částečně přednáškami z předmětu SFC.
+
+\section{Princip ShortestPathACO algoritmu}
+ShortestPathACO algoritmus vychází z meta-heuristiky ACO, která je založena na chování mravenčí kolonie a komunikace mravenců pomocí feromonových stop. Prvotním algoritmem byl Ant System, navržen Marcem Dorigem v roce 1992 \cite{dorigo1996ant}. 
+
+Stejně jako u AS a jeho pozdějších verzí, je i ShortestPathACO založen na vypuštění množiny mravenců do prohledávaného prostoru (v tomto případě neorientovaného grafu). Mravenci začínají v počátečním uzlu a prohledávají graf, dokud nenaleznou koncový uzel (analogie k potravě u reálných mravenců). Mravenci se poté s potravou vrací zpět do počátečního uzlu. Při průchodu grafem vypouštějí feromony, které později ovlivňují rozhodování dalších mravenců o vydání se touto konkrétní cestou (hranou v grafu). Stejně jako v reálném světě se feromony na hranách postupně vypařují.
+
+\subsection{Výběr následujícího uzlu}
+\label{next}
+Nejdříve je nutné si stanovit, jakým způsobem se budou mravenci po grafu pohybovat. V tomto projektu byl zvolen způsob, že všichni mravenci se při procházení grafem pohybují stejnou rychlostí a respektují vzdálenosti mezi uzly -- mravenec do uzlu dorazí dříve po kratší hraně. Tento způsob má obrovskou výhodu v tom, že mravenci, kteří šli po kratší cestě, dříve vypustí feromony. Je tak větší šance, že se další mravenci vydají touto kratší cestou. Nevýhodou tohoto přístupu je ovšem vyšší výpočetní náročnost, např. oproti čistě diskrétnímu přístupu, kde v každém kroku mravenec přeskočí do následujícího uzlu.
+
+Samotný výběr následujícího uzlu mravencem nastává, když mravenec dorazí do nějakého uzlu. Pravděpodobnost přechodu z uzlu \textit{i} do uzlu \textit{j} je dána vztahem \ref{prob}. Kde \textit{E} je množina všech hran grafu \textit{G}.
+
+\begin{equation}
+\label{prob}
+p_{ij} = \frac{q_{ij}}{\sum_{l:(i,l) \epsilon E}  q_{il}}
+\end{equation}
+
+Koeficient $ q_{ij} $ je možné vypočítat několika způsoby \cite{glabowski2012shortest}. Pro tento projekt byl zvolen vzorec \ref{coeff}. Kde $ \tau_{ij} $ je množství feromonů na hraně mezi uzly \textit{i} a \textit{j}. A $ \eta_{ij} $ je váha hrany mezi uzly \textit{i} a \textit{j}. Výběr uzlu je velmi ovlivněn nastavením parametrů $ \alpha $ (vliv množství feromonu) a $ \beta $ (vliv váhy hrany, v tomto případě délky).
+
+\begin{equation}
+\label{coeff}
+q_{ij} = \tau^\alpha_{ij}\eta^\beta_{ij}
+\end{equation}
+
+\subsection{Přírůstek feromonů}
+\label{inc}
+Vypouštění feromonů mravencem lze opět řešit několika způsoby \cite{glabowski2012shortest}. Nejdříve je nutné si zvolit, kdy bude mravenec feromony vypouštět. V tomto projektu mravenec zvyšuje hodnoty feromonů na hranách postupně na cestě zpět s jídlem do počátečního uzlu (takto to funguje u reálných mravenců). Mravenec se s jídlem vrací po stejné trase, po které se k jídlu dostal (ze zpáteční trasy jsou již při ukládání trasy odstraňovány smyčky). Přírůstek feromonů je pro každou hranu cesty stejný a lze opět vypočítat několika způsoby. Všechny způsoby uvedené v \cite{glabowski2012shortest} byly v tomto projektu implementovány, viz \ref{1}, \ref{2}, \ref{3} a \ref{4} (je možné v simulaci za běhu měnit). Kde $ a_P $ je váha (délka) aktuálně hodnocené cesty a $ a_{P_{best}} $ je váha (délka) zatím nejlepší nalezené cesty.
+
+\begin{equation}
+\label{1}
+\Delta \tau = 1
+\end{equation}
+
+\begin{equation}
+\label{2}
+\Delta \tau = \frac{1}{a_P}
+\end{equation}
+
+\begin{equation}
+\label{3}
+\Delta \tau = \frac{C}{a_P}
+\end{equation}
+
+\begin{equation}
+\label{4}
+\Delta \tau = \frac{a_{P_{best}}}{a_P}
+\end{equation}
+
+kde:
+
+\begin{multicols}{2}
+    \noindent
+    \begin{equation*}
+    C = \max_{(i,j) \epsilon E} a_{ij}
+    \end{equation*}\notag
+    \begin{equation*}
+    a_P = \sum_{(i,j) \epsilon P} a_{ij}
+    \end{equation*}\notag
+\end{multicols}
+
+\subsection{Evaporace feromonů}
+\label{evap}
+Evaporace feromonů je implementována jako vynásobení hodnoty feromonů na každé hraně koeficientem $ \rho \: \epsilon \: \langle 0, 1 \rangle $, který lze v simulaci za běhu měnit. Evaporace probíhá každých 40 iterací algoritmu (každý mravenec se 40x posune), což odpovídá 1 sekundě reálného času. V rámci simulace je možné za běhu měnit také rychlost mravenců, ta však nemá na rychlost evaporace žádný vliv. Jedná se skutečně pouze o vzdálenost, kterou je mravenec schopen urazit za jednotku času (nejedná se o zrychlení celé simulace).
+
+\subsection{Ukončení algoritmu}
+ShortestPathACO je optimalizační algoritmus, tzn. není garantováno nalezení optimálního řešení -- algoritmus může uváznout v lokálním optimu. Schopnost nelézt optimální řešení a nebo dokonce konvergovat k maximálnímu řešení je \textbf{silně závislá na kombinaci parametrů} simulace. Konvergence v kontextu ACO znamená, že většina/všichni mravenci běhají po stejné cestě, která má tím pádem nejvyšší hodnoty feromonů.
+
+Jelikož algoritmus nemá žádnou explicitní podmínku pro ukončení, nabízí se zde ukončení např. po nalezení dostačujícího řešení nebo po určitém počtu kroků. Projekt je ale spíše dělán jako vizualizace principu algoritmu a proto simulace běží dokud není aplikace ukončena. Nejlepší nová nalezená trasa je vyznačena přímo v~grafu modrou barvou a zároveň vypsána na terminál.
+
+\newpage
+\section{Návod na spuštění}
+Projekt byl psán pro \texttt{python3.8}, ale je kompatibilní i s \texttt{python3.6}, který je na serveru Merlin (je pouze nutné přidat přepínač \texttt{--merlin}). Zdrojový kód je v souboru \texttt{src/aco.py}, který se také spouští. Aplikaci je možné spustit s přepínači:
+
+\begin{itemize}
+    \item[] \texttt{-h}, \texttt{--help} -- ukáže nápovědu a ukončí se,
+    \item[] \texttt{-g GRAPH\_FILE}, \texttt{--graph-file GRAPH\_FILE} -- vstupní soubor s JSON reprezentací grafu\footnote{Ukázku formátu grafů je možné vidět ve složce \texttt{graphs/}.},
+    \item[] \texttt{-a ANTS}, \texttt{--ants ANTS} -- počet mravenců,
+    \item[] \texttt{--merlin} -- pokud má aplikace běžet na serveru Merlin, tak je nutné odstranit tooltipy zobrazující ID uzlů, pro které na Merlinu není instalován balíček \texttt{Pmw}.
+\end{itemize}
+
+\textbf{Instalace závislostí a spuštění na Ubuntu} (s přednastavenými parametry):
+\begin{itemize}
+    \item[] \texttt{make install \&\& make run}
+\end{itemize}
+
+\textbf{Spuštění na serveru Merlin} (není nutno instalovat závislosti):
+\begin{itemize}
+    \item[] \texttt{make run-merlin}
+\end{itemize}
+
+Po spuštění aplikace se otevře okno s GUI, které zobrazí graf, mravence a ovládání. Je možné nastavit typ přírůstku feromonu (viz \ref{inc}), koeficient evaporace $ \rho $ (viz \ref{evap}), rychlost mravenců (viz \ref{evap}), koeficienty $ \alpha $ a $ \beta $ (viz \ref{next}). 
+
+Počáteční uzel je zobrazen zelenou, koncový uzel žlutou. Nejlepší dosavadní nalezená trasa je vyznačena modrým obrysem. Relativní hodnoty feromonů vůči aktuální maximální hodnotě jsou vyznačovány červenou (čím červenější hrana, tím větší relativní hodnota feromonů). Důležitou poznámkou je, že \textbf{rychlost mravenců neovlivňuje rychlost evaporace}, tzn. pokud se mravenci zastaví, feromony se dále vypařují. 
+
+\newpage
+\bibliography{SFC-bib} 
+\bibliographystyle{bib-styles/czplain}
+
+\end{document}
