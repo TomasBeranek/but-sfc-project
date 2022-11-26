@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.8
 
-# ******************************* main.py ***********************************
+# ******************************* aco.py ************************************
 #  Course: Soft Computing (SFC) - FIT BUT
 #  Project name: Shortest path search simulation using ACO
 #  Author: Beranek Tomas (xberan46)
