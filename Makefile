@@ -9,8 +9,10 @@
 ANTS_NUM=50
 GRAPH_FILE=graphs/graph3.json
 
+MERLIN_ANTS_NUM=5
+
 run-merlin:
-	python3.6 src/aco.py --merlin -a $(ANTS_NUM) -g $(GRAPH_FILE)
+	python3.6 src/aco.py --merlin -a $(MERLIN_ANTS_NUM) -g $(GRAPH_FILE)
 
 run:
 	python3.8 src/aco.py -a $(ANTS_NUM) -g $(GRAPH_FILE)
