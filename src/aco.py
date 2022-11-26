@@ -161,6 +161,9 @@ def get_next_node(curr_node, edges, last_node_id, start_node_id):
     adjacent_node_ids = curr_node['adjacent_nodes']
     curr_node_id = curr_node['id']
 
+    if len(adjacent_node_ids) == 1:
+        return next(iter(adjacent_node_ids))
+
     coefs = {}
     coef_sum = 0
 
