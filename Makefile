@@ -3,6 +3,7 @@
 #  Project name: Shortest path search simulation using ACO
 #  Author: Beranek Tomas (xberan46)
 #  Date: 26.11.2022
+#  Up2date sources: https://github.com/TomasBeranek/but-sfc-project
 # ***************************************************************************
 
 ANTS_NUM=50
