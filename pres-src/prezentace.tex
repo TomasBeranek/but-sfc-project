@@ -1,0 +1,149 @@
+\documentclass[10pt,xcolor=pdflatex,hyperref={unicode}]{beamer}
+\usepackage{newcent}
+\usepackage[utf8]{inputenc}
+%\usepackage[czech]{babel}
+%\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{fancyvrb}
+\usetheme{FIT}
+
+\usepackage{setspace}
+\usepackage{enumerate}
+\usepackage[export]{adjustbox}
+\usepackage{wrapfig}
+\usepackage{multicol}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Vizualizace ACO \\pro hledání nejkratší cesty}
+
+\author[]{
+Tomáš Beránek\\
+}
+
+%\institute[]{Brno University of Technology, Faculty of Information Technology\\
+%Bo\v{z}et\v{e}chova 1/2. 612 66 Brno - Kr\'alovo Pole\\
+%login@fit.vutbr.cz}
+
+\institute[]{xberan46@stud.fit.vutbr.cz\\
+Fakulta informačních technologií Vysokého učení technického v Brně\\
+%Bo\v{z}et\v{e}chova 1/2. 612 66 Brno - Kr\'alovo Pole\\
+}
+
+% České logo - Czech logo
+% beamerouterthemeFIT.sty řádek 9: fitlogo1_cz
+
+\date{13. prosince 2022}
+%\date{\today}
+%\date{} % bez data / without date
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+
+\frame[plain]{\titlepage}
+
+\begin{frame}
+\frametitle{Obecné informace}
+
+Glabowski, M., Musznicki, B., Nowak, P. a Zwierzykowski, P. \emph{Shortest path problem solving based on ant colony optimization metaheuristic}. Image Processing & Communications. De Gruyter Poland. 2012, roč. 17, 1-2, s. 7.
+
+\doublespacing
+\begin{itemize}
+    \item Řešení hostováno na Githubu: \url{https://github.com/TomasBeranek/but-sfc-project}
+    \item Programovací jazyk: 
+    \begin{itemize}
+        \item Python3.8 -- pro Ubuntu,
+        \item Python3.6 -- pro server Merlin (bez tooltipů).
+    \end{itemize}
+    \item GUI knihovna -- \emph{tkinter}.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Algoritmus ShortestPathACO}
+\doublespacing
+\begin{itemize}    
+    \item Větší podobnost reálným mravencům než u řešení \emph{TSP}.
+    \singlespacing
+    \item Mravenci vyráží z \emph{mraveniště} (počáteční uzel) a hledají \emph{jídlo} (koncový uzel), se kterým se vracejí zpět.
+    \item Mravenci mají určitou \emph{rychlost} -- nepřeskakují mezi uzly.
+    \doublespacing
+    \item Výběr následujícího uzlu:
+        \begin{multicols}{2}
+        \noindent
+        \begin{equation*}
+        p_{ij} = \frac{q_{ij}}{\sum_{l:(i,l) \epsilon E}  q_{il}}
+        \end{equation*}\notag
+        \begin{equation*}
+        q_{ij} = \tau^\alpha_{ij}\eta^\beta_{ij}
+        \end{equation*}\notag
+        \end{multicols}
+        
+        \begin{itemize}
+            \item[] kde $\tau$ je množství feromonů a $\eta$ je váha (délka) hrany.
+        \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Algoritmus ShortestPathACO}
+    \doublespacing
+    \begin{itemize}    
+        \item Mravenci se vracejí po stejné cestě \emph{bez smyček}.
+        \item Feromony jsou vypouštěny \emph{postupně při návratu} mravence.
+        \item \emph{Přírůstek feromonů} je počítán:
+    \end{itemize}
+
+    \begin{multicols}{4}
+    \noindent
+    \begin{equation*}
+    \Delta \tau = 1
+    \end{equation*}\notag
+    \begin{equation*}
+    \Delta \tau = \frac{1}{a_P}
+    \end{equation*}\notag
+    \begin{equation*}
+    \Delta \tau = \frac{C}{a_P}
+    \end{equation*}\notag
+    \begin{equation*}
+    \Delta \tau = \frac{a_{P_{best}}}{a_P}
+    \end{equation*}\notag
+    \end{multicols}
+
+    \singlespacing
+    \begin{itemize}
+        \item \emph{Vypařování feromonů} probíhá každou sekundu a je nezávislé na rychlosti mravenců.
+    \end{itemize}
+
+    \doublespacing
+    \begin{itemize}
+        \item Stále se jedná o \alert{heuristiku}!
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Nastavitelné parametry simulace}
+\doublespacing
+    \begin{itemize}
+        \item Při spuštění programu:
+        \begin{itemize}
+            \item počet mravenců,
+            \item podkladový graf (JSON formát).
+        \end{itemize}
+        \item Za běhu:
+        \begin{itemize}
+            \item typ výpočtu přírůstku feromonů,
+            \item koeficient vypařování,
+            \item rychlost mravenců,
+            \item $\alpha$ -- vliv feromonů,
+            \item $\beta$ -- vliv váhy (délky) hrany.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+
+\bluepage{Děkuji Vám za pozornost}
+
+\end{document}
